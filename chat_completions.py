@@ -88,17 +88,20 @@ async def do_single(
     lang: str,
     max_tokens: int,
     temperature: float,
-    top_p: float,
+    top_p: Optional[float],
     prefix: str,
 ) -> None:
-    lm = dspy.LM(
-        name,
-        model_type="chat",
-        temperature=temperature,
-        top_p=top_p,
-        max_tokens=max_tokens,
-        cache=False,
-    )
+    lm_kwargs = {
+        "model": name,
+        "model_type": "chat",
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "cache": False,
+    }
+    if top_p is not None:
+        lm_kwargs["top_p"] = top_p
+
+    lm = dspy.LM(**lm_kwargs)
     dspy.configure(lm=lm)
     out = await completion_cot.aforward(lang=lang, prefix=prefix)
     print("**** REASONING ****")
@@ -247,16 +250,19 @@ async def do_bench(
     num_concurrent: int,
     max_tokens: int,
     max_completions: int,
-    top_p: float,
+    top_p: Optional[float],
 ) -> None:
-    lm = dspy.LM(
-        name,
-        model_type="chat",
-        temperature=temperature,
-        top_p=top_p,
-        max_tokens=max_tokens,
-        cache=False,
-    )
+    lm_kwargs = {
+        "model": name,
+        "model_type": "chat",
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "cache": False,
+    }
+    if top_p is not None:
+        lm_kwargs["top_p"] = top_p
+
+    lm = dspy.LM(**lm_kwargs)
     dspy.configure(lm=lm)
 
     try:
@@ -357,8 +363,8 @@ async def main() -> None:
     bench.add_argument(
         "--top-p",
         type=float,
-        default=0.95,
-        help="Top-p value for sampling",
+        default=None,
+        help="Top-p value for sampling (set explicitly, e.g., 0.95, when desired)",
     )
     bench.add_argument(
         "--max-completions",
@@ -384,7 +390,10 @@ async def main() -> None:
         "--temperature", type=float, default=0.2, help="Temperature for completions"
     )
     single.add_argument(
-        "--top-p", type=float, default=0.95, help="Top-p value for sampling"
+        "--top-p",
+        type=float,
+        default=None,
+        help="Top-p value for sampling (set explicitly when desired)",
     )
     single.add_argument(
         "--prefix", type=str, required=True, help="Prefix of the program to complete"
