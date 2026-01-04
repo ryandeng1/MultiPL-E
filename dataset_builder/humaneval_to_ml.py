@@ -61,6 +61,9 @@ def coerce(expr: str, type) -> str:
         case expr, ast.Subscript(ast.Name("Optional"), _):
             return coerce_to_option(expr)
         case expr, ast.Name("float") | "float" if not "." in expr:
+            paren_int = re.fullmatch(r"\((-?\d+)\)", expr)
+            if paren_int:
+                return f"({paren_int.group(1)}.0)"
             return f"{expr}.0"
         # This is a special case for a few benchmarks which are float list but
         # contain integer literals. 
@@ -114,7 +117,7 @@ class Translator:
             return f'"{c}"'
         if type(c) == int:
             if c < 0:
-                return f"(~{c*(-1)})"
+                return f"(-{c*(-1)})"
             else:
                 return repr(c)
         if type(c) == float:
