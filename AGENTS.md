@@ -22,4 +22,12 @@ Here is the approach to take when fixing a GitHub issue:
 
 3. Assuming you are able to fix the bug, ensure the commit subject says "Fixes
    #N" for N is the issue number.
-- 
+
+4. Tooling and environment notes:
+   - `uv` is available. Prefer `uv venv .venv` plus `uv pip install ...` when a
+     Python environment is required.
+   - For evaluation, use the provided container with Podman. If needed:
+     - `podman pull ghcr.io/nuprl/multipl-e-evaluation`
+     - `podman tag ghcr.io/nuprl/multipl-e-evaluation multipl-e-eval`
+     - Run evaluation with:
+       `podman run --rm --network none -v ./PATH_TO_RUNS:/run:rw multipl-e-eval --dir /run --output-dir /run --recursive`
