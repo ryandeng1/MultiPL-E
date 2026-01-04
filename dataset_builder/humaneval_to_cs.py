@@ -214,6 +214,12 @@ class Translator(humaneval_to_cpp.Translator):
         self.union_decls = {}
         if self.is_primitive_type(self.translated_return_type):
             return f"    Debug.Assert({left} == {right});"
+        if self.translated_return_type.startswith(f"{self.list_type}<"):
+            return f"    Debug.Assert({left}.SequenceEqual({right}));"
+        if self.translated_return_type.startswith(f"{self.dict_type}<"):
+            return (
+                f"    Debug.Assert({left}.Count == {right}.Count && !{left}.Except({right}).Any());"
+            )
         else:
             return f"    Debug.Assert({left}.Equals({right}));"
 
