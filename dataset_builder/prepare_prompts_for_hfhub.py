@@ -5,17 +5,19 @@
 # ]
 # ///
 """
-This script prepares all prompts for a particular language and pushes them to
-the Hugging Face Hub.
+This script prepares all prompts for a particular language and either:
+- Pushes them to the Hugging Face Hub
+- Saves them to a local JSONL file
+
+Use the --output argument to specify the destination.
 """
 
 import argparse
-import sys
-import datasets
-from generic_translator import list_originals, translate_prompt_and_tests, get_stop_from_translator
 from pathlib import Path
 import json
 import re
+from generic_translator import list_originals, translate_prompt_and_tests, get_stop_from_translator
+from dataset_io import save_dataset
 
 def extract_number(name):
     match = re.search(r'\d+', name)
@@ -60,8 +62,13 @@ def main():
         help="Skips tests that fail to translate. By default, if a test fails to translate, the entire problem is skipped.",
     )
 
-    args.add_argument("--dataset-name", type=str, default="nuprl-staging/MultiPL-E")
-    
+    args.add_argument(
+        "--output",
+        type=str,
+        required=True,
+        help="Output specification. Format: 'hub:dataset_name:config:split' or 'jsonl:path.jsonl'",
+    )
+
     args.add_argument("--original-dataset", type=str, required=True)
 
     args.add_argument("--originals", type=str, required=True)
@@ -112,22 +119,12 @@ def main():
 
     results.sort(key=lambda x: extract_number(x["name"]))
 
-
     print(f"Translation stats:")
     print(f"  Num originals: {len(originals)}")
     print(f"  Num translated: {len(results)}")
     print(f"  Translation ratio: {len(results) / len(originals):.2f}")
-    dataset = datasets.Dataset.from_list(results)
 
-    config_lang = translator.file_ext()
-    if config_lang == "go_test.go":
-        config_lang = "go"
-
-    
-    config_name = f"{args.original_dataset}-{config_lang}"
-    
-    dataset.push_to_hub(
-        args.dataset_name, split="test", config_name=config_name)
+    save_dataset(results, args.output)
 
 
 

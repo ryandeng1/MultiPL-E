@@ -44,6 +44,7 @@ from pathlib import Path
 import json
 import gzip
 from tqdm.auto import tqdm
+from dataset_io import load_dataset
 
 
 class Completion(dspy.Signature):
@@ -251,6 +252,7 @@ async def do_bench(
     max_tokens: int,
     max_completions: int,
     top_p: Optional[float],
+    dataset: Optional[str],
 ) -> None:
     lm_kwargs = {
         "model": name,
@@ -274,9 +276,9 @@ async def do_bench(
         )
         exit(1)
 
-    problems = datasets.load_dataset(
-        "nuprl/MultiPL-E", f"{root_dataset}-{lang}", split="test"
-    )
+    # Load dataset from spec (defaults to Hub if not specified)
+    dataset_spec = dataset or f"hub:nuprl/MultiPL-E:{root_dataset}-{lang}:test"
+    problems = load_dataset(dataset_spec)
 
     output_dir = Path(
         f"{root_dataset}-{lang}-{name_override or name}-{temperature}-reworded"
@@ -371,6 +373,12 @@ async def main() -> None:
         type=int,
         required=True,
         help="Maximum number of completions to generate",
+    )
+    bench.add_argument(
+        "--dataset",
+        type=str,
+        default=None,
+        help="Dataset spec: 'hub:name:config:split' or 'jsonl:path.jsonl'. Default: hub:nuprl/MultiPL-E:{root_dataset}-{lang}:test",
     )
 
     single.add_argument(

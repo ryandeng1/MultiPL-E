@@ -1,9 +1,15 @@
 """
-Run this script to call prepare_prompts_json.py for every experiment combination
-in libexamples.
+Run this script to call prepare_prompts_for_hfhub.py for every experiment combination
+in libexperiments.
 """
 import subprocess
 from libexperiments import LANGS, VARIATIONS
+
+def config_lang(lang: str) -> str:
+    """Normalize language name for dataset config (e.g., go_test.go -> go)."""
+    if lang == "go_test.go":
+        return "go"
+    return lang
 
 def prompt_terminology(variation):
     match variation:
@@ -51,13 +57,15 @@ def prepare(lang: str, variation: str, dataset: str):
     o = originals(variation, dataset)
     p = prompt_terminology(variation)
     target_dir = "../prompts"
-    output = f"{target_dir}/{dataset}-{lang}-{variation}.jsonl"
-    
-    cmd = f"python3 prepare_prompts_json.py --lang humaneval_to_{lang}.py" + \
-         f" --prompt-terminology {p} --doctests {d} --originals {o} --output {output}"
-    
+    cfg_lang = config_lang(lang)
+    output_spec = f"jsonl:{target_dir}/{dataset}-{cfg_lang}-{variation}.jsonl"
+
+    cmd = f"python3 prepare_prompts_for_hfhub.py --lang humaneval_to_{lang}.py" + \
+         f" --prompt-terminology {p} --doctests {d} --originals {o}" + \
+         f" --original-dataset {dataset} --output {output_spec}"
+
     print(cmd)
-    
+
     result = subprocess.run(cmd, shell=True, encoding="utf-8")
     if  result.returncode != 0:
         exit(1)
