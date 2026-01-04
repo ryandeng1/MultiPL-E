@@ -216,6 +216,7 @@ def translate_tests(
         return None
     prefix_lines = translator.test_suite_prefix_lines(entry_point)
     test_cases = prefix_lines.copy()
+    seen_tests = {}
     match tests_ast:
         case ast.Module(body=[ast.FunctionDef(body=body)]):
             body_ast = body
@@ -235,6 +236,14 @@ def translate_tests(
                     if hasattr(translator, "finalize"):
                         left = translator.finalize(left, "lhs")
                         right = translator.finalize(right, "rhs")
+                    if left in seen_tests and seen_tests[left] != right:
+                        print(
+                            f"Conflicting tests for {filename}: {left} == {seen_tests[left]} vs {right}"
+                        )
+                        if panic_on_test_fail:
+                            return None
+                        continue
+                    seen_tests.setdefault(left, right)
                     test_cases.append(translator.deep_equality(left, right))
                 except Exception as e:
                     print(
