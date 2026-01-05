@@ -8,7 +8,14 @@ import torch
 
 
 class VLLM:
-    def __init__(self, name, revision, tokenizer_name=None, tokenizer_revision=None, num_gpus=1):
+    def __init__(
+        self,
+        name,
+        revision,
+        tokenizer_name=None,
+        tokenizer_revision=None,
+        num_gpus=1,
+    ):
         dtype = "float16"
         if torch.cuda.is_bf16_supported():
             dtype = "bfloat16"
@@ -28,16 +35,15 @@ class VLLM:
         self, prompts: List[str], max_tokens: int, temperature: float, top_p, stop
     ):
         prompts = [prompt.strip() for prompt in prompts]
-        params = SamplingParams(temperature=temperature,
-                                top_p=top_p, max_tokens=max_tokens, stop=stop)
+        params = SamplingParams(
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+        )
         outputs = self.model.generate(prompts, params, use_tqdm=False)
         outputs = [o.outputs[0] for o in outputs]
-        return [
-            (
-                stop_at_stop_token(o.text, stop),
-                o.cumulative_logprob,
-                o.token_ids,
-            ) for o in outputs]
+        return [stop_at_stop_token(o.text, stop) for o in outputs]
 
 
 def automodel_partial_arg_parser():
