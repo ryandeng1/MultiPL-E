@@ -37,6 +37,43 @@ class Translator:
         This code goes at the start of the test suite.
         """
         return [
+            "function is_int_keyed_array($value): bool {",
+            "    if (!is_array($value)) {",
+            "        return false;",
+            "    }",
+            "    foreach (array_keys($value) as $key) {",
+            "        if (!is_int($key)) {",
+            "            return false;",
+            "        }",
+            "    }",
+            "    return true;",
+            "}",
+            "",
+            "function normalize_array($value) {",
+            "    if (!is_array($value)) {",
+            "        return $value;",
+            "    }",
+            "    if (is_int_keyed_array($value)) {",
+            "        $values = array_values($value);",
+            "        foreach ($values as $index => $item) {",
+            "            $values[$index] = normalize_array($item);",
+            "        }",
+            "        return $values;",
+            "    }",
+            "    $normalized = array();",
+            "    foreach ($value as $key => $item) {",
+            "        $normalized[$key] = normalize_array($item);",
+            "    }",
+            "    return $normalized;",
+            "}",
+            "",
+            "function deep_equal($left, $right): bool {",
+            "    if (is_array($left) && is_array($right)) {",
+            "        return normalize_array($left) === normalize_array($right);",
+            "    }",
+            "    return $left === $right;",
+            "}",
+            "",
             "function candidate(...$args) {",
             f"    return {entry_point}(...$args);",
             "}",
@@ -58,7 +95,7 @@ class Translator:
         Make sure you use the right equality operator for your language. For example,
         == is the wrong operator for Java and OCaml.
         """
-        return f"""    if ({left} !== {right}) {{ throw new Exception("Test failed!"); }}"""
+        return f"""    if (!deep_equal({left}, {right})) {{ throw new Exception("Test failed!"); }}"""
 
     def gen_literal(self, c: bool | str | int | float):
         """Translate a literal expression
