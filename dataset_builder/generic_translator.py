@@ -305,13 +305,20 @@ def translate_terms(language, fields, prompt):
         language = "go"
     target_dict = lang_dict[language]
     for f in fields:
-        if f in prompt and target_dict[f] != 'Q':
-            if 'an '+f in prompt and consonant(target_dict[f][0]):
-                prompt = prompt.replace('an '+f, 'a '+target_dict[f])
-            elif 'a '+f in prompt and vowel(target_dict[f][0]):
-                prompt = prompt.replace('a '+f, 'an '+target_dict[f])
-            # can't be an else: need to catch 2nd occurences of term that don't have article
-            prompt = prompt.replace(f, target_dict[f])
+        if target_dict[f] != 'Q':
+            variants = [f]
+            lower_variant = f.lower()
+            if lower_variant != f:
+                variants.append(lower_variant)
+            article = "an" if vowel(target_dict[f][0]) else "a"
+            for variant in variants:
+                if variant in prompt:
+                    prompt = re.sub(
+                        rf"\b(a|an)\s+{re.escape(variant)}\b",
+                        f"{article} {target_dict[f]}",
+                        prompt,
+                    )
+                    prompt = re.sub(rf"\b{re.escape(variant)}\b", target_dict[f], prompt)
     return prompt
 
 
