@@ -15,6 +15,7 @@ def eval_script(path: Path):
             "exit_code": build_result.exit_code,
             "stdout": build_result.stdout,
             "stderr": build_result.stderr,
+            "runtime": build_result.runtime,
         }
 
     run_result = run([basename])
@@ -33,6 +34,7 @@ def eval_script(path: Path):
         "exit_code": run_result.exit_code,
         "stdout": run_result.stdout,
         "stderr": run_result.stderr,
+        "runtime": run_result.runtime,
     }
 
 

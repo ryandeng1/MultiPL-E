@@ -46,13 +46,21 @@ def for_file(path: Path):
     n = len(data["results"])
     c = len([True for r in data["results"] if r["status"]
             == "OK" and r["exit_code"] == 0])
+
+    # Calculate runtime statistics
+    runtimes = [r.get("runtime", 0) for r in data["results"]]
+    mean_runtime = np.mean(runtimes) if runtimes else 0
+    median_runtime = np.median(runtimes) if runtimes else 0
+
     return {
         "pass@1": estimator(n, c, 1),
         "pass@10": estimator(n, c, 10),
         "pass@100": estimator(n, c, 100),
         "n": n,
         "c": c,
-        "temperature": data["temperature"] if "temperature" in data else 0.2
+        "temperature": data["temperature"] if "temperature" in data else 0.2,
+        "mean_runtime": mean_runtime,
+        "median_runtime": median_runtime
     }
 
 
@@ -65,7 +73,7 @@ def main():
         "dirs", type=str,  help="Directories with results. ", nargs="+")
     args = parser.parse_args()
     if not args.suppress_header:
-        print("Dataset,Pass@k,Estimate,NumProblems,MinCompletions,MaxCompletions")
+        print("Dataset,Pass@k,Estimate,NumProblems,MinCompletions,MaxCompletions,MeanRuntime,MedianRuntime")
     for d in args.dirs:
         results = [for_file(p) for p in itertools.chain(
             Path(d).glob("*.results.json"), Path(d).glob("*.results.json.gz"))]
@@ -80,26 +88,28 @@ def main():
         num_problems = len(results)
         min_completions = np.min([r["n"] for r in results])
         max_completions = np.max([r["n"] for r in results])
+        mean_runtime = np.mean([r["mean_runtime"] for r in results])
+        median_runtime = np.median([r["median_runtime"] for r in results])
         if temperature == 0.8:
             pass_1 = np.mean([r["pass@1"] for r in results])
             pass_10 = np.mean([r["pass@10"] for r in results])
             pass_100 = np.mean([r["pass@100"] for r in results])
             print(
-                f"{name},1,{pass_1},{num_problems},{min_completions},{max_completions}")
+                f"{name},1,{pass_1},{num_problems},{min_completions},{max_completions},{mean_runtime},{median_runtime}")
             print(
-                f"{name},10,{pass_10},{num_problems},{min_completions},{max_completions}")
+                f"{name},10,{pass_10},{num_problems},{min_completions},{max_completions},{mean_runtime},{median_runtime}")
             print(
-                f"{name},100,{pass_100},{num_problems},{min_completions},{max_completions}")
+                f"{name},100,{pass_100},{num_problems},{min_completions},{max_completions},{mean_runtime},{median_runtime}")
         else:
             pass_1 = np.mean([r["pass@1"] for r in results])
             print(
-                f"{name},1,{pass_1},{num_problems},{min_completions},{max_completions}")
+                f"{name},1,{pass_1},{num_problems},{min_completions},{max_completions},{mean_runtime},{median_runtime}")
 
             
         if args.k is not None:
             pass_k = np.mean([estimator(r["n"], r["c"], args.k) for r in results])
             print(
-                f"{name},{args.k},{pass_k},{num_problems},{min_completions},{max_completions}")
+                f"{name},{args.k},{pass_k},{num_problems},{min_completions},{max_completions},{mean_runtime},{median_runtime}")
 
 
 if __name__ == "__main__":

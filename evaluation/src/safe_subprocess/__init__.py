@@ -14,12 +14,14 @@ class Result:
     exit_code: int
     stdout: str
     stderr: str
+    runtime: float
 
-    def __init__(self, timeout, exit_code, stdout, stderr):
+    def __init__(self, timeout, exit_code, stdout, stderr, runtime):
         self.timeout = timeout
         self.exit_code = exit_code
         self.stdout = stdout
         self.stderr = stderr
+        self.runtime = runtime
 
 
 def set_nonblocking(reader):
@@ -62,6 +64,7 @@ def run(
     stdout_bytes_read = 0
     stderr_bytes_read = 0
 
+    start_time = time.perf_counter()
     for _ in range(max_iterations):
         this_stdout_read = p.stdout.read(MAX_BYTES_PER_READ)
         this_stderr_read = p.stderr.read(MAX_BYTES_PER_READ)
@@ -84,8 +87,11 @@ def run(
     except ProcessLookupError:
         pass
 
+    end_time = time.perf_counter()
+    runtime = end_time - start_time
+
     timeout = exit_code is None
     exit_code = exit_code if exit_code is not None else -1
     stdout = b"".join(stdout_saved_bytes).decode("utf-8", errors="ignore")
     stderr = b"".join(stderr_saved_bytes).decode("utf-8", errors="ignore")
-    return Result(timeout=timeout, exit_code=exit_code, stdout=stdout, stderr=stderr)
+    return Result(timeout=timeout, exit_code=exit_code, stdout=stdout, stderr=stderr, runtime=runtime)
